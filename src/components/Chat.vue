@@ -20,25 +20,25 @@
 
 <script>
 import axios from "axios";
-const DASHSCOPE_API_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
-const headers = {
-  'Authorization': 'Bearer sk-dc356b8ca42c41788717c007f49e134a',
-  'Content-Type': 'application/json',
-  'X-DashScope-SSE': 'enable',
-};
-
-const data = {
-  "model": "qwen-max-1201",
-  "input": {
-    "messages": [
-      {
-        "role": "user",
-        "content": "你好啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊你是谁啊"
-      }
-    ]
-  },
-  "parameters": {}
-};
+// const DASHSCOPE_API_URL = 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+// const headers = {
+//   'Authorization': 'Bearer sk-dc356b8ca42c41788717c007f49e134a',
+//   'Content-Type': 'application/json',
+//   'X-DashScope-SSE': 'enable',
+// };
+//
+// const data = {
+//   "model": "qwen-max-1201",
+//   "input": {
+//     "messages": [
+//       {
+//         "role": "user",
+//         "content": "你好啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊你是谁啊"
+//       }
+//     ]
+//   },
+//   "parameters": {}
+// };
 
 
 export default {
@@ -53,30 +53,38 @@ export default {
   },
 
   methods: {
-    sendMessage() {
+    async sendMessage() {
       if (this.userInput.trim()) {
         this.messages.push({
           sender: 'User',
           content: this.userInput,
           selected: false // 如果您需要消息选择功能
         });
+        // 使用 fetch 发送请求
+        try {
+          const response = await fetch('http://127.0.0.1:8000/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // 其他需要的头部信息
+            },
+            body: JSON.stringify({ data: this.userInput })
+          });
+
+          // 处理流式响应
+          const reader = response.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            console.log(new TextDecoder("utf-8").decode(value));
+            // 在这里处理每个数据块
+          }
+        } catch (error) {
+          console.error(error);
+        }
+
         // 清空输入框
         this.userInput = '';
-        // 这里添加发送消息到后端的代码
-        // 准备要发送的数据，包括消息内容
-        const dataToSend = {
-          data: this.userInput, // 取最新的消息内容
-        };
-
-        axios.post(DASHSCOPE_API_URL, data, { headers })
-            .then(response => {
-              // 处理响应数据
-              console.log(response.data);
-            })
-            .catch(error => {
-              // 处理请求错误
-              console.error(error);
-            });
       }
     },
     submitFeedback() {
