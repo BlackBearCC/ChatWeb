@@ -48,45 +48,31 @@ export default {
             },
             body: JSON.stringify({ data: this.userInput })
           });
-          console.log(response)
 
           // 处理流式响应
           const reader = response.body.getReader();
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            const responseData = new TextDecoder("utf-8").decode(value)
-            // 遍历responseData中的每个条目
-            console.log(responseData)
+            const responseData = new TextDecoder("utf-8").decode(value);
 
-              if (responseData.startsWith('data:')) {
-                // 提取 "data" 字段的内容
-                const dataString = entry.substring(5); // 去除 "data:" 前缀
-              // 检查是否包含 "data" 字段
+            // 按行分割数据并处理每行
+            const lines = responseData.split('\n');
+            lines.forEach(line => {
+              if (line.startsWith('data:')) {
                 try {
-                  const dataObject = JSON.parse(dataString);
-
-                  // 检查是否包含 "output" 字段
-                  if (dataObject.output && dataObject.output.text) {
-                    const textContent = dataObject.output.text;
-                    console.log(`Text Content: ${textContent}`);
-                  } else {
-                    console.error("未找到'output'或'text'字段");
+                  // 解析JSON数据
+                  const jsonData = JSON.parse(line.substring(5)); // 从"data:"之后开始解析
+                  const text = jsonData?.output?.text;
+                  if (text) {
+                    this.addMessage("Ai", text);
+                    this.typeWriterEffect(text, "ai-message", 100);
                   }
-                } catch (error) {
-                  console.error("无法解析JSON数据");
+                } catch (e) {
+                  console.error('JSON解析错误:', e);
                 }
-              } else {
-                console.error("未找到'data'字段");
               }
-
-
-            // const outputJSON = JSON.parse(data).data.output.text;
-            // console.log(outputJSON);
-
-            this.addMessage("Ai",data)
-            this.typeWriterEffect(data,"ai-message",100)
-            // 在这里处理每个数据块
+            });
           }
         } catch (error) {
           console.error(error);
@@ -99,18 +85,16 @@ export default {
     typeWriterEffect(text, elementId, speed = 100) {
       let i = 0;
       const targetElement = document.getElementById(elementId);
-      if (targetElement!=null)
-      {
-        function typeCharacter() {
-          if (i < text.length) {
-            targetElement.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(typeCharacter, speed);
-          }
+
+      function typeCharacter() {
+        if (i < text.length) {
+          targetElement.innerHTML += text.charAt(i);
+          i++;
+          setTimeout(typeCharacter, speed);
         }
-        typeCharacter();
       }
 
+      typeCharacter();
     },
     submitFeedback() {
       const selectedMessages = this.messages.filter(m => m.selected);
