@@ -3,6 +3,10 @@
     <div id="chat-box">
       <div v-for="(message, index) in messages" :key="message.request_id"
            :class="['message', message.sender === 'User' ? 'user-message' : 'ai-message']">
+        <!-- 添加头像容器 -->
+        <div class="message-avatar"></div>
+<!--        <img src="../assets/ai_head.png" alt="AI头像" />-->
+        <!-- 消息内容 -->
         <span :id="'message-' + message.request_id">{{ message.content }}</span>
       </div>
     </div>
@@ -126,6 +130,9 @@ export default {
         // 打字机完成
       }
     },
+    structuring(){
+
+    }
   }
 };
 </script>
@@ -157,33 +164,74 @@ html, body {
  }
 
 #chat-box {
-  height: calc(100% - 120px); /* 减去按钮和间距的高度 */
+  height: calc(100% - 120px);
   margin-bottom: 20px;
-  overflow-y: auto; /* 超出部分滚动 */
-  width: 100%; /* 聊天框宽度填满容器 */
+  overflow-y: auto;
+  width: 100%;
   padding: 10px;
-  //background-color: #2a2a2a;
-  //border: 1px solid #444444;
   border-radius: 10px;
 }
+#chat-box::-webkit-scrollbar {
+  width: 10px; /* 修改滚动条宽度 */
+}
+
+#chat-box::-webkit-scrollbar-track {
+  background-color: #f0f0f0; /* 修改滚动条背景颜色 */
+  border-radius: 5px; /* 修改滚动条滑块圆角 */
+}
+
+#chat-box::-webkit-scrollbar-thumb {
+  background-color: #3b3b3b; /* 修改滚动条滑块颜色 */
+  border-radius: 5px; /* 修改滚动条滑块圆角 */
+  width: 8px; /* 修改滚动条滑块宽度 */
+  height: 10px; /* 修改滚动条滑块高度 */
+}
+#chat-box::-webkit-scrollbar-thumb:hover {
+  background-color: #ffcd00; /* 修改滚动条滑块悬停颜色 */
+}
+
 .message {
+  display: flex;
+  align-items: flex-start;
   padding: 10px;
   margin-bottom: 16px;
   border-radius: 8px;
   max-width: 80%;
   word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 .user-message {
-  //background-color: #3b3b3b; /* 用户消息的背景颜色 */
   align-self: flex-start;
-  //margin-left: auto;
+  background-color: transparent;
 }
 
 .ai-message {
-  background-color: #3b3b3b; /* AI 消息的背景颜色 */
-  align-self: flex-start; /* 对齐到左边 */
+  align-self: flex-start;
+  background-color: #3b3b3b;
 }
+/* 这里是您的CSS样式，包括头像样式 */
+.message-avatar {
+  min-width: 50px;
+  width: 50px;
+  height: 50px;
+  border-radius: 5px;
+  margin-right: 10px;
+  background-color: yellow;
+  background-size: cover;
+}
+
+.ai-message .message-avatar {
+  background-image: url('../assets/ai_head.png'); /* 根据实际路径调整 */
+
+}
+
+/* 应用头像样式 */
+.user-message .message-avatar {
+  background-color: yellow; /* 用户头像使用亮黄色背景 */
+  background-image: url('../assets/ai_head.png'); /* 根据实际路径调整 */
+}
+
 /* 输入框和按钮的容器样式 */
 #input-container {
   display: flex;
