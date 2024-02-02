@@ -34,6 +34,8 @@ export default {
 
   methods: {
     async sendMessage() {
+
+
       if (this.userInput.trim()) {
         this.messages.push({
           sender: 'User',
@@ -50,7 +52,8 @@ export default {
             },
             body: JSON.stringify({ data: this.userInput })
           });
-
+          // 清空输入框
+          this.userInput = '';
           // 处理流式响应
           const reader = response.body.getReader();
           while (true) {
@@ -85,8 +88,6 @@ export default {
           console.error(error);
         }
 
-        // 清空输入框
-        this.userInput = '';
       }
     },
 
@@ -118,13 +119,11 @@ export default {
       if (messageIndex !== -1 && typeWriterIndex < text.length) {
         this.messages[messageIndex].content += text.charAt(typeWriterIndex);
         this.typeWriterIndexes[requestId]++; // 更新typeWriterIndex
-
         setTimeout(() => {
           this.typeWriterEffect(text, requestId, speed); // 继续递归调用
         }, speed);
       } else {
-        // 打字机效果完成后，可以在此执行任何必要的操作
-        console.log("dayinwancheng");
+        // 打字机完成
       }
     },
   }
@@ -144,6 +143,7 @@ html, body {
 #chat-container {
    display: flex;
    flex-direction: column;
+  border: 2px solid #444444;
    width: 80vw; /* 设置宽度为视窗宽度的 2/3 */
    height: 50vw;
    max-width: 1000px; /* 可以根据需要调整最大宽度 */
@@ -162,26 +162,26 @@ html, body {
   overflow-y: auto; /* 超出部分滚动 */
   width: 100%; /* 聊天框宽度填满容器 */
   padding: 10px;
-  background-color: #2a2a2a;
-  border: 1px solid #444444;
+  //background-color: #2a2a2a;
+  //border: 1px solid #444444;
   border-radius: 10px;
 }
 .message {
   padding: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   border-radius: 8px;
   max-width: 80%;
   word-wrap: break-word;
 }
 
 .user-message {
-  background-color: blue; /* 用户消息的背景颜色 */
-  align-self: flex-end; /* 对齐到右边 */
-  margin-left: auto;
+  //background-color: #3b3b3b; /* 用户消息的背景颜色 */
+  align-self: flex-start;
+  //margin-left: auto;
 }
 
 .ai-message {
-  background-color: gray; /* AI 消息的背景颜色 */
+  background-color: #3b3b3b; /* AI 消息的背景颜色 */
   align-self: flex-start; /* 对齐到左边 */
 }
 /* 输入框和按钮的容器样式 */
@@ -210,10 +210,10 @@ input[type="text"] {
 }
 /* 输入框悬停及焦点效果 */
 input[type="text"]:hover, input[type="text"]:focus {
-  border-color: #00dbde; /* 高亮边框颜色 */
-  box-shadow: 0 0 8px #00dbde; /* 发光效果 */
-  background-image: linear-gradient(to right, rgba(0, 128, 255, 0), rgba(0, 219, 222, 0.2)); /* 充能渐变效果 */
-  caret-color: #fc00ff; /* 设置醒目的光标颜色 */
+  border-color: #fcd535; /* 高亮边框颜色 */
+  box-shadow: 0 0 8px #fcd535; /* 发光效果 */
+  background-image: linear-gradient(to right, rgba(0, 128, 255, 0), rgba(255, 205, 0, 0.2)); /* 充能渐变效果 */
+  caret-color: black; /* 设置醒目的光标颜色 */
 }
 
 /* 输入框内的占位符样式 */
@@ -223,10 +223,10 @@ input[type="text"]::placeholder {
 
 /* 按钮样式 */
 button {
-  background-image: linear-gradient(to left, #fc00ff, #00dbde); /* 初始渐变背景 */
+  background-image: linear-gradient(to left, #fcd535, #fcd535); /* 初始渐变背景 */
   flex-grow: 1; /* 输入框占据剩余空间 */ height: 50px; /* 按钮高度与输入框一致 */
   padding: 10px; /* 增加内边距以便文本居中 */
-  color: white;
+  color: black;
   border: none;
   border-radius: 5px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
@@ -244,13 +244,15 @@ button::before {
   left: -100%; /* 开始时将伪元素置于左侧之外 */
   width: 300%; /* 使伪元素宽度为按钮的三倍 */
   height: 100%;
-  background-image: linear-gradient(to left, #fc00ff, #00dbde); /* 渐变背景 */
+  //background-image: transparent; /* 初始时渐变背景为透明 */
   transition: all 0.5s ease-out;
   z-index: -1;
 }
 
 button:hover::before {
   left: 0; /* 鼠标悬停时，移动伪元素以显示渐变效果 */
+  background-image: linear-gradient(to left, #ff7200, #fcd535); /* 鼠标悬停时的渐变背景 */
+
 }
 
 /* 按钮文本样式，确保在动画之上 */
