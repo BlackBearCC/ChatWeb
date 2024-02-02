@@ -151,9 +151,9 @@ html, body {
    display: flex;
    flex-direction: column;
   border: 2px solid #444444;
-   width: 80vw; /* 设置宽度为视窗宽度的 2/3 */
+   width: 50vw; /* 设置宽度为视窗宽度的 1/2 */
    height: 50vw;
-   max-width: 1000px; /* 可以根据需要调整最大宽度 */
+   max-width: 1400px; /* 可以根据需要调整最大宽度 */
    margin: auto; /* 自动边距实现居中 */
    padding: 20px;
    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
@@ -196,7 +196,8 @@ html, body {
   padding: 10px;
   margin-bottom: 16px;
   border-radius: 8px;
-  max-width: 80%;
+  max-width: 100%;
+  margin-right: 32px;
   word-wrap: break-word;
   white-space: pre-wrap;
 }
@@ -229,7 +230,7 @@ html, body {
 /* 应用头像样式 */
 .user-message .message-avatar {
   background-color: yellow; /* 用户头像使用亮黄色背景 */
-  background-image: url('../assets/ai_head.png'); /* 根据实际路径调整 */
+  background-image: url('../assets/user_head.jpg'); /* 根据实际路径调整 */
 }
 
 /* 输入框和按钮的容器样式 */
