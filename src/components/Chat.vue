@@ -1,9 +1,9 @@
 <template>
   <div id="chat-container">
     <div id="chat-box">
-      <div v-for="(message, index) in messages" :key="index"
+      <div v-for="(message, index) in messages" :key="message.request_id"
            :class="['message', message.sender === 'User' ? 'user-message' : 'ai-message']">
-        <span>{{ message.content }}</span>
+        <span :id="'message-' + message.request_id">{{ message.content }}</span>
       </div>
     </div>
     <div id="input-container">
@@ -25,6 +25,7 @@ export default {
       userInput: '',
       feedbackInput: '',
       messages: [],
+      lastMessageLength: 0, // 用来存储上一次消息文本的长度
       // 假设 sessionId 已经在某处生成并存储
       sessionId: 'your-session-id'
     };
@@ -36,7 +37,7 @@ export default {
         this.messages.push({
           sender: 'User',
           content: this.userInput,
-          selected: false // 如果您需要消息选择功能
+          request_id: Date.now().toString() // 生成一个临时的request_id
         });
         // 使用 fetch 发送请求
         try {
@@ -55,24 +56,29 @@ export default {
             const { done, value } = await reader.read();
             if (done) break;
             const responseData = new TextDecoder("utf-8").decode(value);
-
-            // 按行分割数据并处理每行
-            const lines = responseData.split('\n');
-            lines.forEach(line => {
-              if (line.startsWith('data:')) {
-                try {
-                  // 解析JSON数据
-                  const jsonData = JSON.parse(line.substring(5)); // 从"data:"之后开始解析
-                  const text = jsonData?.output?.text;
-                  if (text) {
-                    this.addMessage("Ai", text);
-                    this.typeWriterEffect(text, "ai-message", 100);
-                  }
-                } catch (e) {
-                  console.error('JSON解析错误:', e);
+            console.log(responseData)
+            // 查找 'data:' 部分
+            let dataIndex = responseData.indexOf('data:');
+            if (dataIndex !== -1) {
+              // 提取 JSON 字符串
+              let jsonStr = responseData.substring(dataIndex + 5);
+              try {
+                // 解析JSON数据
+                const jsonData = JSON.parse(jsonStr); // 从"data:"之后开始解析
+                const text = jsonData?.output?.text;
+                const requestId = jsonData?.request_id;
+                if (text && requestId) {
+                  const newText = text.substring(this.lastMessageLength);
+                  this.addMessage('Ai', newText,requestId);
+                  this.lastMessageLength = text.length; // 更新已接收文本的长度
                 }
+              } catch (e) {
+                console.error('JSON解析错误:', e);
               }
-            });
+            } else {
+              console.log("没有找到 'data:' 部分");
+            }
+
           }
         } catch (error) {
           console.error(error);
@@ -82,28 +88,35 @@ export default {
         this.userInput = '';
       }
     },
-    typeWriterEffect(text, elementId, speed = 100) {
-      let i = 0;
-      const targetElement = document.getElementById(elementId);
 
-      function typeCharacter() {
-        if (i < text.length) {
-          targetElement.innerHTML += text.charAt(i);
-          i++;
-          setTimeout(typeCharacter, speed);
-        }
-      }
 
-      typeCharacter();
-    },
     submitFeedback() {
       const selectedMessages = this.messages.filter(m => m.selected);
       // 发送反馈到后端的逻辑...
       this.feedbackInput = '';
     },
-    addMessage(sender, content) {
-      this.messages.push({ sender, content, selected: false });
-    }
+    addMessage(sender, content,requestId) {
+      // 生成唯一ID用于DOM元素和打字效果
+      this.messages.push({ sender, content, request_id: requestId });
+      this.$nextTick(() => { // 确保DOM更新后再调用打字效果
+        this.typeWriterEffect(content, 'message-' + requestId, 100);
+      });
+    },
+
+    typeWriterEffect(text, elementId, speed = 100) {
+      let i = 0;
+      const targetElement = document.getElementById(elementId);
+      if (targetElement != null) {
+        const typeCharacter = () => {
+          if (i < text.length) {
+            targetElement.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(typeCharacter, speed);
+          }
+        };
+        typeCharacter();
+      }
+    },
   }
 };
 </script>
