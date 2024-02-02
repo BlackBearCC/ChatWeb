@@ -28,7 +28,7 @@ export default {
       lastMessageLength: 0, // 用来存储上一次消息文本的长度
       // 假设 sessionId 已经在某处生成并存储
       sessionId: 'your-session-id',
-      typeWriterIndex: 0, // 全局的打字机索引
+      typeWriterIndexes: {} // 字典用于存储每个消息的typeWriterIndex
     };
   },
 
@@ -106,23 +106,26 @@ export default {
         // 首次添加空白新消息
         content="";
         this.messages.push({ sender, content, request_id: requestId });
+        // 初始化typeWriterIndex为0
+        this.typeWriterIndexes[requestId] = 0;
       }
     },
 
     typeWriterEffect(text, requestId, speed = 100) {
       const messageIndex = this.messages.findIndex(m => m.request_id === requestId);
+      const typeWriterIndex = this.typeWriterIndexes[requestId] || 0;
 
-      const typeCharacter = () => {
-        if (this.typeWriterIndex < text.length && messageIndex !== -1) {
-          this.messages[messageIndex].content += text.charAt(this.typeWriterIndex);
-          this.typeWriterIndex++;
-          setTimeout(typeCharacter, speed);
-        } else {
-          // this.typeWriterIndex = 0; // 重置索引为下一条消息做准备
-        }
-      };
+      if (messageIndex !== -1 && typeWriterIndex < text.length) {
+        this.messages[messageIndex].content += text.charAt(typeWriterIndex);
+        this.typeWriterIndexes[requestId]++; // 更新typeWriterIndex
 
-      typeCharacter();
+        setTimeout(() => {
+          this.typeWriterEffect(text, requestId, speed); // 继续递归调用
+        }, speed);
+      } else {
+        // 打字机效果完成后，可以在此执行任何必要的操作
+        console.log("dayinwancheng");
+      }
     },
   }
 };
