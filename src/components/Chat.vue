@@ -27,7 +27,8 @@ export default {
       messages: [],
       lastMessageLength: 0, // 用来存储上一次消息文本的长度
       // 假设 sessionId 已经在某处生成并存储
-      sessionId: 'your-session-id'
+      sessionId: 'your-session-id',
+      typeWriterIndex: 0, // 全局的打字机索引
     };
   },
 
@@ -56,7 +57,7 @@ export default {
             const { done, value } = await reader.read();
             if (done) break;
             const responseData = new TextDecoder("utf-8").decode(value);
-            console.log(responseData)
+            // console.log(responseData)
             // 查找 'data:' 部分
             let dataIndex = responseData.indexOf('data:');
             if (dataIndex !== -1) {
@@ -68,9 +69,9 @@ export default {
                 const text = jsonData?.output?.text;
                 const requestId = jsonData?.request_id;
                 if (text && requestId) {
-                  const newText = text.substring(this.lastMessageLength);
-                  this.addMessage('Ai', newText,requestId);
-                  this.lastMessageLength = text.length; // 更新已接收文本的长度
+                  this.addOrUpdateMessage('Ai', text,requestId);
+                  console.log(text)
+
                 }
               } catch (e) {
                 console.error('JSON解析错误:', e);
@@ -95,27 +96,33 @@ export default {
       // 发送反馈到后端的逻辑...
       this.feedbackInput = '';
     },
-    addMessage(sender, content,requestId) {
-      // 生成唯一ID用于DOM元素和打字效果
-      this.messages.push({ sender, content, request_id: requestId });
-      this.$nextTick(() => { // 确保DOM更新后再调用打字效果
-        this.typeWriterEffect(content, 'message-' + requestId, 100);
-      });
+    addOrUpdateMessage(sender, content,requestId) {
+      const existingMessageIndex = this.messages.findIndex(m => m.request_id === requestId);
+      if (existingMessageIndex !== -1) {
+        // 使用打字机更新现有消息的内容而不使用vue响应式特性
+        // this.messages[existingMessageIndex].content = content;
+        this.typeWriterEffect(content, requestId, 100);
+      } else {
+        // 首次添加空白新消息
+        content="";
+        this.messages.push({ sender, content, request_id: requestId });
+      }
     },
 
-    typeWriterEffect(text, elementId, speed = 100) {
-      let i = 0;
-      const targetElement = document.getElementById(elementId);
-      if (targetElement != null) {
-        const typeCharacter = () => {
-          if (i < text.length) {
-            targetElement.innerHTML += text.charAt(i);
-            i++;
-            setTimeout(typeCharacter, speed);
-          }
-        };
-        typeCharacter();
-      }
+    typeWriterEffect(text, requestId, speed = 100) {
+      const messageIndex = this.messages.findIndex(m => m.request_id === requestId);
+
+      const typeCharacter = () => {
+        if (this.typeWriterIndex < text.length && messageIndex !== -1) {
+          this.messages[messageIndex].content += text.charAt(this.typeWriterIndex);
+          this.typeWriterIndex++;
+          setTimeout(typeCharacter, speed);
+        } else {
+          // this.typeWriterIndex = 0; // 重置索引为下一条消息做准备
+        }
+      };
+
+      typeCharacter();
     },
   }
 };
