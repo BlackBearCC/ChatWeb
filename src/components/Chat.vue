@@ -23,6 +23,7 @@
 </template>
 
 <script>
+import { v4 as uuidv4 } from 'uuid';
 export default {
   data() {
     return {
@@ -31,12 +32,51 @@ export default {
       messages: [],
       lastMessageLength: 0, // 用来存储上一次消息文本的长度
       // 假设 sessionId 已经在某处生成并存储
-      sessionId: 'your-session-id',
+      sessionId: '', // Initializing sessionId
       typeWriterIndexes: {} // 字典用于存储每个消息的typeWriterIndex
     };
   },
+  mounted() {
+    // 检查本地存储中是否有 UUID
+    const storedSessionId = localStorage.getItem('sessionId');
+
+    if (storedSessionId) {
+      // 如果存在，使用本地存储中的 UUID
+      this.sessionId = storedSessionId;
+    } else {
+      // 否则，生成新的 UUID，并保存到本地存储
+      this.sessionId = uuidv4();
+      localStorage.setItem('sessionId', this.sessionId);
+    }
+
+    // 发送会话验证请求
+    this.validateSession();
+  },
 
   methods: {
+    async validateSession() {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/validate-session', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // other headers
+          },
+          body: JSON.stringify({ sessionId: this.sessionId })
+        });
+
+        const data = await response.json();
+
+        if (data.valid) {
+          console.log('Session is valid');
+        } else {
+          console.log('Session is invalid');
+        }
+      } catch (error) {
+        console.error('Error validating session:', error);
+      }
+    },
+
     async sendMessage() {
 
 
