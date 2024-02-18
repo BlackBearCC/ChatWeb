@@ -11,13 +11,15 @@
       </div>
     </div>
     <div id="input-container">
-      <input type="text" v-model="userInput" placeholder="发送消息..." @keypress.enter="sendMessage" />
+      <input type="text" v-model="userInput" placeholder="龙年大吉，在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
       <button @click="sendMessage"> <span>发送</span></button>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
     </div>
   </div>
     <div id="feedback-section">
-      <textarea v-model="feedbackInput" placeholder="输入反馈..."></textarea>
-      <button @click="submitFeedback">提交反馈</button>
+<!--      <textarea v-model="feedbackInput" placeholder="输入反馈..."></textarea>-->
+<!--      <button @click="submitFeedback">提交反馈</button>-->
     </div>
 
 </template>
@@ -56,7 +58,7 @@ export default {
   methods: {
     async validateSession() {
       try {
-        const response = await fetch('http://127.0.0.1:8000/validate-session', {
+        const response = await fetch('http://182.254.242.30:8888/validate-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -87,14 +89,18 @@ export default {
           request_id: Date.now().toString() // 生成一个临时的request_id
         });
         // 使用 fetch 发送请求
+
         try {
-          const response = await fetch('http://127.0.0.1:8000/generate', {
+          const response = await fetch('http://182.254.242.30:8888/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
               // 其他需要的头部信息
             },
-            body: JSON.stringify({ data: this.userInput })
+            body: JSON.stringify({
+              data: this.userInput, // 用户输入的数据
+              sessionId: this.sessionId // 携带sessionId
+            })
           });
           // 清空输入框
           this.userInput = '';
@@ -178,38 +184,59 @@ export default {
 </script>
 
 <style scoped>
-html, body {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #000; /* 或者任何您想要的背景颜色 */
-}
-#chat-container {
-   display: flex;
-   flex-direction: column;
-  border: 2px solid #444444;
-   width: 50vw; /* 设置宽度为视窗宽度的 1/2 */
-   height: 50vw;
-   max-width: 1400px; /* 可以根据需要调整最大宽度 */
-   margin: auto; /* 自动边距实现居中 */
-   padding: 20px;
-   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-   background-color: #1e1e1e;
-   color: white;
-   border-radius: 10px;
-   position: relative;
- }
 
-#chat-box {
-  height: calc(100% - 120px);
-  margin-bottom: 20px;
-  overflow-y: auto;
-  width: 100%;
-  padding: 10px;
+/* 设置 html 和 body 以确保背景覆盖整个屏幕 */
+html, body {
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 阻止页面滚动 */
+  background-color: #000; /* 或者任何您想要的背景颜色 */
+  position: relative; /* 为了z-index起作用，需要设置position属性 */
+}
+
+
+/* 确保聊天容器填充整个屏幕，并且是最顶层的 */
+#chat-container {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid #444444;
+  width: 50vw; /* 设置宽度为视窗宽度的 1/2 */
+  height: 50vw;
+  max-width: 1400px; /* 可以根据需要调整最大宽度 */
+  margin: auto; /* 自动边距实现居中 */
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  background-color: #1e1e1e;
+  color: white;
   border-radius: 10px;
+  position: relative;
+}
+
+/* 设置聊天框以允许在内部滚动 */
+#chat-box {
+  flex: 1; /* 聊天框占据除输入框之外的所有可用空间 */
+  overflow-y: auto; /* 允许在聊天框内部滚动 */
+  padding: 10px; /* 内边距 */
+}
+
+input[type="text"] {
+  box-sizing: border-box; /* 边框和填充包括在宽度内 */
+  width: calc(100% - 70px); /* 减去按钮宽度和一些间隙 */
+  max-width: calc(100% - 70px); /* 同上，确保最大宽度不超过屏幕宽度 */
+  height: 40px; /* 设置一个固定高度 */
+  max-height: 40px; /* 同上，确保最大高度不变 */
+  margin: 0; /* 移除外边距 */
+  padding: 0 10px; /* 设置内边距 */
+  border: 1px solid #ccc; /* 根据需要设置边框样式 */
+  outline: none; /* 移除聚焦时的外轮廓 */
+  /* 其他样式... */
+}
+
+input[type="text"]:focus {
+  border: 1px solid #fcd535; /* 聚焦时边框颜色，确保边框厚度不变 */
+  /* 如果有额外的聚焦样式，确保它们不会影响尺寸 */
 }
 #chat-box::-webkit-scrollbar {
   width: 10px; /* 修改滚动条宽度 */
@@ -258,7 +285,7 @@ html, body {
   height: 50px;
   border-radius: 5px;
   margin-right: 10px;
-  background-color: yellow;
+  background-color: #ffcd00;
   background-size: cover;
 }
 
@@ -269,7 +296,7 @@ html, body {
 
 /* 应用头像样式 */
 .user-message .message-avatar {
-  background-color: yellow; /* 用户头像使用亮黄色背景 */
+  background-color: #ffcd00; /* 用户头像使用亮黄色背景 */
   background-image: url('../assets/user_head.jpg'); /* 根据实际路径调整 */
 }
 
@@ -283,7 +310,7 @@ html, body {
 
 /* 输入框样式 */
 input[type="text"] {
-  flex-grow: 5; /* 输入框占据剩余空间 */
+  flex-grow: 4; /* 输入框占据剩余空间 */
   margin-right: 10px; /* 与按钮之间的距离 */
   height: 50px; /* 输入框高度，您可以根据需要调整 */
   padding: 10px; /* 增加内边距以便文本居中 */
@@ -299,8 +326,8 @@ input[type="text"] {
 }
 /* 输入框悬停及焦点效果 */
 input[type="text"]:hover, input[type="text"]:focus {
-  border-color: #fcd535; /* 高亮边框颜色 */
-  box-shadow: 0 0 8px #fcd535; /* 发光效果 */
+  border-color: #ffcd00; /* 高亮边框颜色 */
+  box-shadow: 0 0 8px #ffcd00; /* 发光效果 */
   background-image: linear-gradient(to right, rgba(0, 128, 255, 0), rgba(255, 205, 0, 0.2)); /* 充能渐变效果 */
   caret-color: black; /* 设置醒目的光标颜色 */
 }
@@ -312,8 +339,9 @@ input[type="text"]::placeholder {
 
 /* 按钮样式 */
 button {
-  background-image: linear-gradient(to left, #fcd535, #fcd535); /* 初始渐变背景 */
+  background-image: linear-gradient(to left, #ffcd00, #ffcd00); /* 初始渐变背景 */
   flex-grow: 1; /* 输入框占据剩余空间 */ height: 50px; /* 按钮高度与输入框一致 */
+  min-width: 200px;
   padding: 10px; /* 增加内边距以便文本居中 */
   color: black;
   border: none;
@@ -340,7 +368,7 @@ button::before {
 
 button:hover::before {
   left: 0; /* 鼠标悬停时，移动伪元素以显示渐变效果 */
-  background-image: linear-gradient(to left, #ff7200, #fcd535); /* 鼠标悬停时的渐变背景 */
+  background-image: linear-gradient(to left, #fc8f35, #ffcd00); /* 鼠标悬停时的渐变背景 */
 
 }
 
@@ -360,10 +388,77 @@ button span {
   /* 其他样式保持不变 */
 }
 
-/* 适应移动设备 */
 @media (max-width: 600px) {
+  html, body {
+    height: 100%;
+    max-width: 100vw;
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* 阻止页面滚动 */
+  }
+
+
   #chat-container {
-    width: 90vw; /* 在小屏幕上，聊天框宽度更宽一些 */
+    position: absolute; /* 绝对定位确保是最顶层 */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto; /* 自动边距实现居中 */
+    max-width: 100vw; /* 最大宽度为视口宽度 */
+    max-height: 100vh; /* 最大高度为视口高度 */
+    min-width: 100vw;
+    min-height: 100vh;
+    border: none; /* 移除边框 */
+    border-radius: 0; /* 移除圆角 */
+    z-index: 1000; /* 高z-index值确保它在其他内容之上 */
+    box-sizing: border-box; /* 确保边框和内边距包含在宽度和高度内 */
+    display: flex;
+    flex-direction: column; /* 设置聊天容器为列布局 */
+    justify-content: space-between; /* 子元素间隔均匀分布 */
+  }
+
+  #chat-box {
+    flex-grow: 1;
+    overflow-y: auto; /* 允许在聊天框内部滚动 */
+    padding: 10px; /* 为聊天框内容添加上下填充 */
+    margin-bottom: 60px; /* 与固定输入容器的高度相同 */
+    max-width: 100vw;
+  }
+
+  #input-container {
+    position: fixed; /* 固定在屏幕底部 */
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px; /* 输入容器的固定高度 */
+    display: flex; /* 保持输入框和按钮水平排列 */
+    align-items: center; /* 垂直居中 */
+    max-width: 100vw;
+    min-width: 100vw;
+    padding: 0 10px; /* 为输入框添加左右填充 */
+    background: #1e1e1e; /* 与聊天容器背景相同 */
+  }
+
+  input[type="text"] {
+    flex-grow: 1; /* 输入框占据除按钮外的所有可用空间 */
+    height: 40px; /* 减小输入框的高度以适应固定容器 */
+    margin-right: 10px; /* 与按钮之间的距离 */
+
+    width: 50vw; /* 减去按钮宽度和一些间隙 */
+  }
+  input[type="text"]:focus {
+    flex-grow: 1; /* 输入框占据除按钮外的所有可用空间 */
+    height: 40px; /* 减小输入框的高度以适应固定容器 */
+    margin-right: 10px; /* 与按钮之间的距离 */
+    max-width: 100vw;
+    /* 保持宽高不变，不添加任何可能会增加尺寸的样式 */
+  }
+
+  button {
+    width: 50px; /* 按钮宽度 */
+    height: 40px; /* 减小按钮的高度以适应固定容器 */
   }
 }
+
 </style>
