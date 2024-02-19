@@ -1,31 +1,57 @@
 <template>
-  <div id="chat-container">
-    <div id="chat-box">
-      <div v-for="(message, index) in messages" :key="message.request_id"
-           :class="['message', message.sender === 'User' ? 'user-message' : 'ai-message']">
-        <!-- 添加头像容器 -->
-        <div class="message-avatar"></div>
-<!--        <img src="../assets/ai_head.png" alt="AI头像" />-->
-        <!-- 消息内容 -->
-        <span :id="'message-' + message.request_id">{{ message.content }}</span>
+  <div id="page-container">
+
+    <!-- 顶部标题栏 -->
+    <div id="header">
+      <!-- 标题内容 -->
+
+    </div>
+
+    <!-- 主体内容区域 -->
+    <div id="main-content">
+
+      <!-- 侧边栏 -->
+      <div id="sidebar">
+        <!-- 侧边栏内容 -->
       </div>
-    </div>
-    <div id="input-container">
-      <input type="text" v-model="userInput" placeholder="龙年大吉，在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
-      <button @click="sendMessage"> <span>发送</span></button>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+      <!-- 聊天容器 -->
+      <div id="chat-container">
+        <div id="chat-header">
+          {{ situationData }}
+
+        </div>
+
+        <!-- 聊天框 -->
+        <div id="chat-box">
+          <div v-for="(message, index) in messages" :key="message.request_id"
+               :class="['message', message.sender === 'User' ? 'user-message' : 'ai-message']">
+            <!-- 头像容器 -->
+            <div class="message-avatar"></div>
+            <!-- 消息内容 -->
+            <span :id="'message-' + message.request_id">{{ message.content }}</span>
+          </div>
+        </div>
+        <!-- 输入容器 -->
+        <div id="input-container">
+          <input type="text" v-model="userInput" placeholder="在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
+          <button @click="sendMessage"><span>发送</span></button>
+        </div>
+      </div>
 
     </div>
-  </div>
+
+    <!-- 底部反馈区 -->
     <div id="feedback-section">
-<!--      <textarea v-model="feedbackInput" placeholder="输入反馈..."></textarea>-->
-<!--      <button @click="submitFeedback">提交反馈</button>-->
+      <!-- 反馈输入区域 -->
     </div>
 
+  </div>
 </template>
 
 <script>
 import { v4 as uuidv4 } from 'uuid';
+import axios from "axios";
 export default {
   data() {
     return {
@@ -35,7 +61,9 @@ export default {
       lastMessageLength: 0, // 用来存储上一次消息文本的长度
       // 假设 sessionId 已经在某处生成并存储
       sessionId: '', // Initializing sessionId
-      typeWriterIndexes: {} // 字典用于存储每个消息的typeWriterIndex
+      typeWriterIndexes: {}, // 字典用于存储每个消息的typeWriterIndex
+      situationData: null, // 初始时为空
+      isExpanded: false, // 控制展开状态的变量
     };
   },
   mounted() {
@@ -53,12 +81,14 @@ export default {
 
     // 发送会话验证请求
     this.validateSession();
+    this.fetchSituationData();
   },
 
   methods: {
     async validateSession() {
       try {
-        const response = await fetch('http://182.254.242.30:8888/validate-session', {
+        //http://182.254.242.30
+        const response = await fetch('http://127.0.0.1:8000/validate-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -91,7 +121,7 @@ export default {
         // 使用 fetch 发送请求
 
         try {
-          const response = await fetch('http://182.254.242.30:8888/generate', {
+          const response = await fetch('http://127.0.0.1:8000/generate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -140,8 +170,36 @@ export default {
 
       }
     },
+    async fetchSituationData() {
+      try {
 
+        const response = await fetch('http://127.0.0.1:8000/situation-data/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // 其他需要的头部信息
+          },
+          body: JSON.stringify({
+            sessionId: this.sessionId // 携带sessionId
+          })
+        });
 
+        if (!response.ok) {
+          // 如果响应状态不是2xx, 抛出错误
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // 确保使用 await 调用 .json() 方法
+        const data = await response.json();
+        console.log(data.situation)
+        // 更新组件的数据属性
+        this.situationData = data.situation;
+        // 例如，保存到数据属性中：
+        // this.situation = situationData;
+      } catch (error) {
+        console.error('Error fetching situation data:', error);
+      }
+    },
     submitFeedback() {
       const selectedMessages = this.messages.filter(m => m.selected);
       // 发送反馈到后端的逻辑...
@@ -196,9 +254,23 @@ html, body {
   position: relative; /* 为了z-index起作用，需要设置position属性 */
 }
 
+/* 主体部分样式，包含侧边栏和主内容区 */
+#main-content {
+  flex: 1; /* 拉伸以填充剩余空间 */
+  display: flex;
+  background-color: #fff;
+}
+
+/* 侧边栏样式 */
+#sidebar {
+  flex: 0 0 20%; /* 不拉伸，不收缩，宽度为总宽度的20% */
+  background-color: #ddd;
+  padding: 16px;
+}
 
 /* 确保聊天容器填充整个屏幕，并且是最顶层的 */
 #chat-container {
+  flex: 1; /* 拉伸以填充剩余空间 */
   display: flex;
   flex-direction: column;
   border: 2px solid #444444;
@@ -212,6 +284,20 @@ html, body {
   color: white;
   border-radius: 10px;
   position: relative;
+  overflow: hidden; /* 隐藏溢出内容 */
+}
+/* 顶部标题栏样式 */
+#chat-header {
+  flex: 0.1 1 auto; /* 不拉伸，不收缩，自动基于内容设置大小 */
+  max-height: 100px;
+  overflow: hidden;
+  padding: 10px;
+  margin: 16px;
+  background-color: #444444;
+  border-radius: 10px;
+  text-align: left;
+  white-space: pre-wrap;
+  transition: max-height 0.3s ease; /* 动画过渡效果 */
 }
 
 /* 设置聊天框以允许在内部滚动 */
