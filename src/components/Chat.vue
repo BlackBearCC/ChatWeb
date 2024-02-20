@@ -16,18 +16,18 @@
           <img src="../assets/tuji@3x.png" alt="Profile Picture">
         </div>
 <!--        <div class="status-label">在线</div>-->
-        <!-- 体力值 -->
+        <!-- 体力值进度条 -->
         <div class="status-item strength-icon">
-          <div class="status-icon"></div>
           <div class="progress-bar-container">
-            <div class="progress-bar" style="width: 0%;">0%</div> <!-- 根据实际值调整宽度 -->
+            <div class="progress-bar" :style="{ width: strength + '%' }"></div>
+            <div class="progress-bar-text">{{ strength }}/100</div> <!-- 居中的文本容器 -->
           </div>
         </div>
-        <!-- 元气值 -->
+        <!-- 元气值进度条 -->
         <div class="status-item energy-icon">
-          <div class="status-icon"></div>
           <div class="progress-bar-container">
-            <div class="progress-bar" style="width: 0%;">0%</div> <!-- 根据实际值调整宽度 -->
+            <div class="progress-bar" :style="{ width: energy + '%' }"></div>
+            <div class="progress-bar-text">{{ energy }}/100</div> <!-- 居中的文本容器 -->
           </div>
         </div>
         <!-- 新增的状态容器 -->
@@ -88,9 +88,12 @@ export default {
       situationData: null, // 初始时为空
       isExpanded: false, // 控制展开状态的变量
 
-      mood: null,
-      characterLocation: null,
-      action: null
+      strength :88,
+      energy:68,
+
+      mood: "开心",
+      characterLocation: "客厅",
+      action: "站立"
     };
   },
   mounted() {
@@ -240,9 +243,12 @@ export default {
         });
         const data = await response.json();
         if (response.ok) {
+          this.strength = data.strength|| 0;
+          this.energy = data.energy|| 0;
           this.mood = data.mood;
           this.location = data.location;
           this.action = data.action;
+
         } else {
           console.error('Failed to fetch status');
         }
@@ -360,17 +366,31 @@ html, body {
 /* 进度条样式 */
 .progress-bar-container {
   flex-grow: 1; /* 允许进度条容器填充剩余空间 */
-  height: 10px; /* 进度条高度 */
+  margin-left: 10px;
+  height: 14px; /* 进度条高度 */
   background-color: #ddd; /* 进度条背景颜色 */
-  border-radius: 5px; /* 圆角效果 */
+  border-radius: 10px; /* 圆角效果 */
   overflow: hidden; /* 隐藏超出边界的进度条部分 */
+  position: relative; /* 添加相对定位 */
 }
 
 .progress-bar {
   height: 100%; /* 进度条填满容器高度 */
   background-color: #ffcd00; /* 进度条颜色 */
-  border-radius: 5px; /* 圆角效果 */
-  transition: width 0.3s ease; /* 过渡动画 */
+  width: 0;
+  text-align: center; /* 文本居中 */
+  line-height: 10px; /* 行高与高度相同以垂直居中文本 */
+  color: #1e1e1e;
+  border-radius: 10px; /* 圆角效果 */
+  transition: width 0.5s ease; /* 过渡动画 */
+}
+.progress-bar-text {
+  position: absolute; /* 绝对定位 */
+  width: 100%; /* 文本容器宽度填满父容器 */
+  text-align: center; /* 文本水平居中 */
+  line-height: 14px; /* 设置行高等于进度条高度以垂直居中文本 */
+  color: black; /* 文本颜色 */
+  top: 0; /* 顶部对齐 */
 }
 
 /* 使用 :before 伪元素为每个状态项添加图标 */
