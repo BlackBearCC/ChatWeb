@@ -12,7 +12,30 @@
 
       <!-- 侧边栏 -->
       <div id="sidebar">
-        <!-- 侧边栏内容 -->
+        <div class="profile-card">
+          <img src="../assets/tuji@3x.png" alt="Profile Picture">
+        </div>
+<!--        <div class="status-label">在线</div>-->
+        <!-- 体力值 -->
+        <div class="status-item strength-icon">
+          <div class="status-icon"></div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 0%;">0%</div> <!-- 根据实际值调整宽度 -->
+          </div>
+        </div>
+        <!-- 元气值 -->
+        <div class="status-item energy-icon">
+          <div class="status-icon"></div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: 0%;">0%</div> <!-- 根据实际值调整宽度 -->
+          </div>
+        </div>
+        <!-- 新增的状态容器 -->
+        <div class="status-container">
+          <div class="status-tag">情绪：{{ mood || 'null' }}</div>
+          <div class="status-tag">位置：{{ characterLocation || 'null' }}</div>
+          <div class="status-tag">动作：{{ action || 'null' }}</div>
+        </div>
       </div>
 
       <!-- 聊天容器 -->
@@ -64,6 +87,10 @@ export default {
       typeWriterIndexes: {}, // 字典用于存储每个消息的typeWriterIndex
       situationData: null, // 初始时为空
       isExpanded: false, // 控制展开状态的变量
+
+      mood: null,
+      characterLocation: null,
+      action: null
     };
   },
   mounted() {
@@ -82,6 +109,7 @@ export default {
     // 发送会话验证请求
     this.validateSession();
     this.fetchSituationData();
+    this.fetchStatus();
   },
 
   methods: {
@@ -200,6 +228,31 @@ export default {
         console.error('Error fetching situation data:', error);
       }
     },
+
+    async fetchStatus() {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/fetch-status', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // other headers
+          }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          this.mood = data.mood;
+          this.location = data.location;
+          this.action = data.action;
+        } else {
+          console.error('Failed to fetch status');
+        }
+      } catch (error) {
+        console.error('Error fetching status:', error);
+      }
+    }
+  },
+
+
     submitFeedback() {
       const selectedMessages = this.messages.filter(m => m.selected);
       // 发送反馈到后端的逻辑...
@@ -237,7 +290,7 @@ export default {
     structuring(){
 
     }
-  }
+
 };
 </script>
 
@@ -258,15 +311,95 @@ html, body {
 #main-content {
   flex: 1; /* 拉伸以填充剩余空间 */
   display: flex;
-  background-color: #fff;
+  //background-color: #fff;
 }
 
 /* 侧边栏样式 */
 #sidebar {
   flex: 0 0 20%; /* 不拉伸，不收缩，宽度为总宽度的20% */
-  background-color: #ddd;
-  padding: 16px;
+  background-color: #444444;
+  margin-right: 16px;
+  //padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 新增：确保内容居中 */
+  border-radius: 10px;
 }
+/* 卡片样式 */
+.profile-card {
+  width: 100%; /* 卡片宽度相对于侧边栏宽度 */
+  height: auto; /* 高度自动调整以保持图片比例 */
+  //margin-bottom: 20px; /* 与下面的元素间隔 */
+  border-radius: 10px; /* 圆角效果 */
+  overflow: hidden; /* 隐藏溢出的图片部分 */
+  //box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 添加阴影以提升层次感 */
+}
+
+/* 图片样式 */
+.profile-card img {
+  width: 100%; /* 使图片填满卡片 */
+  height: auto; /* 自动调整高度以保持原有比例 */
+  display: block; /* 避免底部出现空隙 */
+}
+
+/* 进度条和情绪状态的共通样式 */
+.status-item {
+  width: 80%; /* 全宽度以适应侧边栏 */
+  display: flex; /* 使用 flex 布局来排列图标和文本 */
+  align-items: center; /* 垂直居中对齐内容 */
+  margin-bottom: 10px; /* 项目间的间距 */
+}
+
+.status-icon {
+  width: 24px; /* 图标宽度 */
+  height: 24px; /* 图标高度 */
+  margin-right: 10px; /* 与文本间距 */
+  background-size: cover; /* 图标覆盖满整个容器 */
+}
+
+/* 进度条样式 */
+.progress-bar-container {
+  flex-grow: 1; /* 允许进度条容器填充剩余空间 */
+  height: 10px; /* 进度条高度 */
+  background-color: #ddd; /* 进度条背景颜色 */
+  border-radius: 5px; /* 圆角效果 */
+  overflow: hidden; /* 隐藏超出边界的进度条部分 */
+}
+
+.progress-bar {
+  height: 100%; /* 进度条填满容器高度 */
+  background-color: #ffcd00; /* 进度条颜色 */
+  border-radius: 5px; /* 圆角效果 */
+  transition: width 0.3s ease; /* 过渡动画 */
+}
+
+/* 使用 :before 伪元素为每个状态项添加图标 */
+.energy-icon:before {
+  content: url('../assets/energy_icon.png'); /* 元气值图标 */
+}
+
+.strength-icon:before {
+  content: url('../assets/strength_icon.png'); /* 体力值图标 */
+}
+
+/* 状态容器样式，用于包裹情绪、位置、动作 */
+.status-container {
+  display: flex; /* 使用 flex 布局进行水平排列 */
+  justify-content: space-around; /* 在项目之间添加平均空间 */
+  width: 100%; /* 容器宽度 */
+  margin-top: 20px; /* 与上方元素的间隔 */
+}
+
+/* 状态标签样式 */
+.status-tag {
+  font-size: 12px; /* 字体大小 */
+  color: #161717; /* 字体颜色 */
+  background-color: #ffcd00; /* 背景颜色 */
+  padding: 2px 10px; /* 内边距 */
+  border-radius: 20px; /* 圆角效果 */
+}
+
+
 
 /* 确保聊天容器填充整个屏幕，并且是最顶层的 */
 #chat-container {
