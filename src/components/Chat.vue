@@ -91,7 +91,8 @@ import axios from "axios";
 export default {
   data() {
     return {
-      remoteUrl:"http://127.0.0.1:8000",
+      // remoteUrl:"http://127.0.0.1:8000",
+      remoteUrl:"http://182.254.242.30:8888",
       userInput: '',
       feedbackInput: '',
       messages: [],
@@ -180,12 +181,32 @@ export default {
           this.typeWriterEffect(text, requestId, speed); // 继续递归调用
         }, speed);
       } else {
-        // 打字机完成
+        // 打字机效果完成后的延时请求
+        this.checkAndUpdateTasks(this.messages[messageIndex].content);
+      }
+    },
+    checkAndUpdateTasks(finalText) {
+      // 检查文本是否包含特定的任务
+      if (finalText.includes("情境更新任务")) {
+        setTimeout(() => {
+          // 请求情境更新的逻辑
+          this.fetchSituationData()
+        }, 5000);
+      }
+      if (finalText.includes("记忆更新任务")) {
+        setTimeout(() => {
+          // 请求记忆更新的逻辑
+          // this.updateMemory();
+        }, 5000);
+      }
+      if (finalText.includes("情绪更新任务")) {
+        setTimeout(() => {
+          // 请求情绪更新的逻辑
+          // this.updateEmotion();
+        }, 5000);
       }
     },
     async sendMessage() {
-
-
       if (this.userInput.trim()) {
         this.messages.push({
           sender: 'User',
@@ -467,7 +488,7 @@ html, body {
 /* 顶部标题栏样式 */
 #chat-header {
   flex: 0.1 1 auto; /* 不拉伸，不收缩，自动基于内容设置大小 */
-  max-height: 100px;
+  max-height: 160px;
   overflow: hidden;
   padding: 10px;
   margin: 16px;
@@ -475,7 +496,10 @@ html, body {
   border-radius: 10px;
   text-align: left;
   white-space: pre-wrap;
-  transition: max-height 0.3s ease; /* 动画过渡效果 */
+  transition: max-height 0.8s ease; /* 动画过渡效果 */
+}
+#chat-header:hover {
+  max-height: none; /* 鼠标悬停时移除最大高度限制 */
 }
 
 /* 设置聊天框以允许在内部滚动 */
