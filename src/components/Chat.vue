@@ -59,6 +59,19 @@
         <div id="input-container">
           <input type="text" v-model="userInput" placeholder="在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
           <button @click="sendMessage"><span>发送</span></button>
+          <!-- 触发下拉菜单的按钮 -->
+          <button @click="toggleDropdown">
+            <span>交互操作</span>
+          </button>
+
+          <!-- 下拉菜单 -->
+          <div v-show="showDropdown" class="dropdown-menu">
+            <ul>
+              <li @click="selectOption('摸摸头')">摸摸头</li>
+              <li @click="selectOption('摸摸脸')">摸摸脸</li>
+              <!-- 添加更多选项 -->
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -78,6 +91,7 @@ import axios from "axios";
 export default {
   data() {
     return {
+      remoteUrl:"http://127.0.0.1:8000",
       userInput: '',
       feedbackInput: '',
       messages: [],
@@ -87,7 +101,7 @@ export default {
       typeWriterIndexes: {}, // 字典用于存储每个消息的typeWriterIndex
       situationData: null, // 初始时为空
       isExpanded: false, // 控制展开状态的变量
-
+      showDropdown: false, // 控制下拉菜单的显示
       strength :88,
       energy:68,
 
@@ -119,7 +133,7 @@ export default {
     async validateSession() {
       try {
         //http://182.254.242.30
-        const response = await fetch('http://127.0.0.1:8000/validate-session', {
+        const response = await fetch(this.remoteUrl+'/validate-session', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -140,130 +154,6 @@ export default {
       }
     },
 
-    async sendMessage() {
-
-
-      if (this.userInput.trim()) {
-        this.messages.push({
-          sender: 'User',
-          content: this.userInput,
-          request_id: Date.now().toString() // 生成一个临时的request_id
-        });
-        // 使用 fetch 发送请求
-
-        try {
-          const response = await fetch('http://127.0.0.1:8000/generate', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              // 其他需要的头部信息
-            },
-            body: JSON.stringify({
-              data: this.userInput, // 用户输入的数据
-              sessionId: this.sessionId // 携带sessionId
-            })
-          });
-          // 清空输入框
-          this.userInput = '';
-          // 处理流式响应
-          const reader = response.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const responseData = new TextDecoder("utf-8").decode(value);
-            // console.log(responseData)
-            // 查找 'data:' 部分
-            let dataIndex = responseData.indexOf('data:');
-            if (dataIndex !== -1) {
-              // 提取 JSON 字符串
-              let jsonStr = responseData.substring(dataIndex + 5);
-              try {
-                // 解析JSON数据
-                const jsonData = JSON.parse(jsonStr); // 从"data:"之后开始解析
-                const text = jsonData?.output?.text;
-                const requestId = jsonData?.request_id;
-                if (text && requestId) {
-                  this.addOrUpdateMessage('Ai', text,requestId);
-                  console.log(text)
-
-                }
-              } catch (e) {
-                console.error('JSON解析错误:', e);
-              }
-            } else {
-              console.log("没有找到 'data:' 部分");
-            }
-
-          }
-        } catch (error) {
-          console.error(error);
-        }
-
-      }
-    },
-    async fetchSituationData() {
-      try {
-
-        const response = await fetch('http://127.0.0.1:8000/situation-data/', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            // 其他需要的头部信息
-          },
-          body: JSON.stringify({
-            sessionId: this.sessionId // 携带sessionId
-          })
-        });
-
-        if (!response.ok) {
-          // 如果响应状态不是2xx, 抛出错误
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        // 确保使用 await 调用 .json() 方法
-        const data = await response.json();
-        console.log(data.situation)
-        // 更新组件的数据属性
-        this.situationData = data.situation;
-        // 例如，保存到数据属性中：
-        // this.situation = situationData;
-      } catch (error) {
-        console.error('Error fetching situation data:', error);
-      }
-    },
-
-    async fetchStatus() {
-      try {
-        const response = await fetch('http://127.0.0.1:8000/fetch-status', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            // other headers
-          }
-        });
-        const data = await response.json();
-        if (response.ok) {
-          this.strength = data.strength|| 0;
-          this.energy = data.energy|| 0;
-          this.mood = data.mood;
-          this.location = data.location;
-          this.action = data.action;
-
-        } else {
-          console.error('Failed to fetch status');
-        }
-      } catch (error) {
-        console.error('Error fetching status:', error);
-      }
-    }
-  },
-
-
-    submitFeedback() {
-      const selectedMessages = this.messages.filter(m => m.selected);
-      // 发送反馈到后端的逻辑...
-      this.feedbackInput = '';
-    },
     addOrUpdateMessage(sender, content,requestId) {
       const existingMessageIndex = this.messages.findIndex(m => m.request_id === requestId);
       if (existingMessageIndex !== -1) {
@@ -293,6 +183,140 @@ export default {
         // 打字机完成
       }
     },
+    async sendMessage() {
+
+
+      if (this.userInput.trim()) {
+        this.messages.push({
+          sender: 'User',
+          content: this.userInput,
+          request_id: Date.now().toString() // 生成一个临时的request_id
+        });
+        // 使用 fetch 发送请求
+
+        try {
+          const response = await fetch(this.remoteUrl+'/generate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              // 其他需要的头部信息
+            },
+            body: JSON.stringify({
+              data: this.userInput, // 用户输入的数据
+              sessionId: this.sessionId // 携带sessionId
+            })
+          });
+          // 清空输入框
+          this.userInput = '';
+          // 处理流式响应
+          const reader = response.body.getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const responseData = new TextDecoder("utf-8").decode(value);
+            // console.log(responseData)
+            // 查找 'data:' 部分
+            let dataIndex = responseData.indexOf('data:');
+            if (dataIndex !== -1) {
+              // 提取 JSON 字符串
+              let jsonStr = responseData.substring(dataIndex + 5);
+              console.log(jsonStr)
+              try {
+                // 解析JSON数据
+                const jsonData = JSON.parse(jsonStr); // 从"data:"之后开始解析
+                const text = jsonData?.output?.text;
+                const requestId = jsonData?.request_id;
+                if (text && requestId) {
+                  this.addOrUpdateMessage('Ai', text,requestId);
+
+                  console.log(text)
+
+                }
+              } catch (e) {
+                console.error('JSON解析错误:', e);
+              }
+            } else {
+              console.log("没有找到 'data:' 部分");
+            }
+
+          }
+        } catch (error) {
+          console.error(error);
+        }
+
+      }
+    },
+    async fetchSituationData() {
+      try {
+
+        const response = await fetch(this.remoteUrl+'/situation-data/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            // 其他需要的头部信息
+          },
+          body: JSON.stringify({
+            sessionId: this.sessionId // 携带sessionId
+          })
+        });
+
+        if (!response.ok) {
+          // 如果响应状态不是2xx, 抛出错误
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // 确保使用 await 调用 .json() 方法
+        const data = await response.json();
+        console.log(data.situation)
+        // 更新组件的数据属性
+        this.situationData = data.situation;
+        // 例如，保存到数据属性中：
+        // this.situation = situationData;
+      } catch (error) {
+        console.error('Error fetching situation data:', error);
+      }
+    },
+
+    async fetchStatus() {
+      try {
+        const response = await fetch(this.remoteUrl+'/fetch-status', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // other headers
+          }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          this.strength = data.strength|| 0;
+          this.energy = data.energy|| 0;
+          this.mood = data.mood;
+          this.location = data.location;
+          this.action = data.action;
+
+        } else {
+          console.error('Failed to fetch status');
+        }
+      } catch (error) {
+        console.error('Error fetching status:', error);
+      }
+    },
+    toggleDropdown() {
+      this.showDropdown = !this.showDropdown; // 切换下拉菜单的显示状态
+    },
+    selectOption(option) {
+      console.log(option); // 执行选中的操作
+      this.showDropdown = false; // 选择后关闭下拉菜单
+    },
+  },
+
+
+    submitFeedback() {
+      const selectedMessages = this.messages.filter(m => m.selected);
+      // 发送反馈到后端的逻辑...
+      this.feedbackInput = '';
+    },
+
     structuring(){
 
     }
@@ -325,6 +349,7 @@ html, body {
   flex: 0 0 20%; /* 不拉伸，不收缩，宽度为总宽度的20% */
   background-color: #444444;
   margin-right: 16px;
+  //height: 60%;
   //padding: 16px;
   display: flex;
   flex-direction: column;
@@ -470,7 +495,7 @@ input[type="text"] {
   padding: 0 10px; /* 设置内边距 */
   border: 1px solid #ccc; /* 根据需要设置边框样式 */
   outline: none; /* 移除聚焦时的外轮廓 */
-  /* 其他样式... */
+
 }
 
 input[type="text"]:focus {
@@ -545,6 +570,37 @@ input[type="text"]:focus {
   justify-content: space-between; /* 使输入框和按钮分布在两侧 */
   align-items: center; /* 垂直居中对齐 */
   height: 80px;
+  position: relative; /* 设置相对定位用于下拉菜单的绝对定位 */
+}
+/* 下拉菜单样式 */
+.dropdown-menu {
+  position: absolute; /* 绝对定位 */
+  background-color: #3b3b3b; /* 白色背景 */
+  border: 1px solid #ddd; /* 边框 */
+  border-radius: 4px; /* 圆角 */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* 阴影 */
+  width: 10%; /* 宽度与输入框匹配 */
+  z-index: 1000; /* 确保在最顶部 */
+}
+
+.dropdown-menu ul {
+  list-style: none; /* 移除列表样式 */
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-menu ul li {
+  padding: 10px; /* 内边距 */
+  border-bottom: 1px solid #ddd; /* 下边框 */
+  cursor: pointer; /* 手形光标 */
+}
+
+.dropdown-menu ul li:last-child {
+  border-bottom: none; /* 移除最后一项的下边框 */
+}
+
+.dropdown-menu ul li:hover {
+  background-color: #f6f6f6; /* 悬停背景颜色 */
 }
 
 /* 输入框样式 */
@@ -553,7 +609,7 @@ input[type="text"] {
   margin-right: 10px; /* 与按钮之间的距离 */
   height: 50px; /* 输入框高度，您可以根据需要调整 */
   padding: 10px; /* 增加内边距以便文本居中 */
-  border-radius: 5px;
+  border-radius: 10px;
   border: 2px solid transparent; /* 设置透明边框以保持布局稳定 */
   background-color: whitesmoke; /* 暗色背景 */
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background-image 0.3s ease;
@@ -580,17 +636,18 @@ input[type="text"]::placeholder {
 button {
   background-image: linear-gradient(to left, #ffcd00, #ffcd00); /* 初始渐变背景 */
   flex-grow: 1; /* 输入框占据剩余空间 */ height: 50px; /* 按钮高度与输入框一致 */
-  min-width: 200px;
-  padding: 10px; /* 增加内边距以便文本居中 */
+  min-width: 150px;
+  //padding: 10px; /* 增加内边距以便文本居中 */
   color: black;
   border: none;
-  border-radius: 5px;
+  border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 10;
   position: relative; /* 为了伪元素定位 */
   overflow: hidden; /* 确保伪元素不超出按钮边界 */
+  margin-right: 10px;
 }
 
 button::before {
