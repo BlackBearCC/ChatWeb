@@ -36,17 +36,21 @@
           <div class="status-tag">位置：{{ characterLocation || 'null' }}</div>
           <div class="status-tag">动作：{{ action || 'null' }}</div>
         </div>
-        <a-collapse v-model:activeKey="activeKey" ghost>
-          <a-collapse-panel key="1" header="This is panel header 1">
-            <p>{{ text }}</p>
-          </a-collapse-panel>
-          <a-collapse-panel key="2" header="This is panel header 2">
-            <p>{{ text }}</p>
-          </a-collapse-panel>
-          <a-collapse-panel key="3" header="This is panel header 3" collapsible="disabled">
-            <p>{{ text }}</p>
-          </a-collapse-panel>
-        </a-collapse>
+        <a-dropdown>
+          <a class="ant-dropdown-link" @click.prevent>
+            添加剧情 <DownOutlined />
+          </a>
+          <template #overlay>
+            <a-menu>
+              <a-menu-item v-for="story in stories" :key="story.id"
+                           :disabled="!story.enabled"
+                           @click="updateStoryStateAndSendMessage(story.id)">
+                {{ story.header }}
+              </a-menu-item>
+            </a-menu>
+          </template>
+        </a-dropdown>
+
       </div>
 
       <!-- 聊天容器 -->
@@ -59,9 +63,10 @@
         <!-- 聊天框 -->
         <div id="chat-box">
           <div v-for="(message, index) in messages" :key="message.request_id"
-               :class="['message', message.sender === 'User' ? 'user-message' : 'ai-message']">
-            <!-- 头像容器 -->
-            <div class="message-avatar"></div>
+               :class="['message', message.sender === 'User' ? 'user-message' : message.sender === 'System' ? 'system-message' : 'ai-message']">
+
+            <!-- 头像容器，如果系统消息不需要头像，则可以这里做条件渲染 -->
+            <div v-if="message.sender !== 'System'" class="message-avatar"></div>
             <!-- 消息内容 -->
             <span :id="'message-' + message.request_id">{{ message.content }}</span>
           </div>
@@ -119,6 +124,29 @@ const mood = ref("开心");
 const characterLocation = ref("客厅");
 const action = ref("站立");
 
+
+const stories = ref([
+  { id: 1, header: '遇到博物馆保安咕噜和呱呱', content: '（地点：博物馆前门）\n' +
+        '“你好，鱼鱼先生~请问我们可以进去吗？~”{char}可爱又有礼貌的询问了一下。\n' +
+        '“我叫咕噜，请。”咕噜面朝前方，但仿佛并没有看到{char}。\n' +
+        '“等等！很抱歉您不能进去。”咕噜突然往后一步拦住了{char}，“您的着装不规范。”\n' +
+        '“啊？可是你刚刚还说...”{char}不开心的嘟嘟嘴。\n' +
+        '“抱歉，我只有在侧面才能看清您。”咕噜仿佛在机械的背台词。\n' +
+        '“呜呜，可是我只有这一件衣服嘛...”{char}可怜巴巴的看着咕噜，但咕噜仿佛并没有看到{char}。\n' +
+        '“你这么想去博物馆看看的话，不如我们去侧门试试吧~”{user}小声建议道。\n' +
+        '“好！”{char}又重新打起了精神。\n' +
+        '（地点：博物馆侧门）\n' +
+        '“侧门是呱呱先生！它好像只能看到天花板！”{char}兴奋的说道。\n' +
+        '“可是天花板是镜面做的呢。”{user}回答。\n' +
+        '“或许，我们可以...”{char}转动着小眼睛，仿佛想到了什么好主意，躲进了{user}的大衣里。\n' +
+        '“你好，我想进入博物馆参观。”{user}礼貌的说道。\n' +
+        '“请，呱。”呱呱面无表情的说道。\n' +
+        '“阿——”{char}小声的打了个喷嚏。\n' +
+        '“阿嚏——”{user}赶紧接上了喷嚏，呱呱看了一眼天花板镜子里的{user}，并没有说什么。', active: false, enabled: true },
+  { id: 2, header: '成为大侦探', content: '剧情内容2...', active: false, enabled: false },
+  { id: 3, header: '博物馆内的失窃案', content: '剧情内容3...', active: false, enabled: false, collapsible: 'disabled' },
+  { id: 4, header: '真相只有一个！', content: '剧情内容4...', active: false, enabled: false, collapsible: 'disabled' },
+]);
 // 使用onMounted代替created生命周期钩子
 onMounted(() => {
   const storedSessionId = localStorage.getItem('sessionId');
@@ -133,7 +161,33 @@ onMounted(() => {
   fetchSituationData();
   fetchStatus();
 });
+const replacePlaceholders = (content) => {
+  return content.replace(/{user}/g, '哥哥').replace(/{char}/g, '兔叽');
+};
+const updateStoryStateAndSendMessage = (storyId) => {
+  const storyIndex = stories.value.findIndex(story => story.id === storyId);
+  if (storyIndex !== -1 && stories.value[storyIndex].enabled) {
+    // 标记当前故事为已读并禁用
+    stories.value[storyIndex].active = true;
+    stories.value[storyIndex].enabled = false;
 
+    // 解锁下一个故事（如果存在）
+    if (storyIndex + 1 < stories.value.length) {
+      stories.value[storyIndex + 1].enabled = true;
+    }
+    // 处理故事内容中的占位符
+    const processedContent = replacePlaceholders(stories.value[storyIndex].content);
+    const requestId = Date.now().toString(); // 生成唯一请求ID
+    // 发送处理后的故事内容到聊天框作为系统消息
+    // messages.value.push({
+    //   sender: 'System',
+    //   content: [],
+    //   request_id: requestId  // 使用当前时间戳作为唯一标识
+    // });
+    messages.value.push({ sender: 'System', content: '', request_id: requestId }); // 添加一个空消息
+    typeWriterEffectSystem(processedContent, requestId, 10); // 启动打字机效果
+  }
+};
 const validateSession = async () => {
   try {
     const response = await fetch(remoteUrl.value + '/validate-session', {
@@ -170,6 +224,17 @@ const addOrUpdateMessage = (sender, content, requestId) => {
     typeWriterIndexes[requestId] = 0;
   }
 };
+const addSystemMessage = (sender, content, requestId) => {
+  const existingMessageIndex = messages.value.findIndex(m => m.request_id === requestId);
+  if (existingMessageIndex === -1) {
+    // 首次添加消息，初始化内容为空字符串
+    messages.value.push({ sender, content: '', request_id: requestId });
+    // 初始化该消息的打字机效果索引为0，并开始逐字符显示
+    typeWriterIndexes.value[requestId] = 0;
+    typeWriterEffectSystem(content, requestId, 100);
+  }
+  // 如果消息已存在，不做任何操作，因为系统消息仅传输一次
+};
 
 const typeWriterEffect = (text, requestId, speed = 100) => {
   const messageIndex = messages.value.findIndex(m => m.request_id === requestId);
@@ -186,6 +251,26 @@ const typeWriterEffect = (text, requestId, speed = 100) => {
     checkAndUpdateTasks(messages.value[messageIndex].content);
   }
 };
+const typeWriterEffectSystem = (text, requestId, speed = 100) => {
+// 确保每个消息的打字索引是独立管理的
+  if (typeWriterIndexes.value[requestId] === undefined) {
+    typeWriterIndexes.value[requestId] = 0;
+  }
+
+  const index = typeWriterIndexes.value[requestId];
+  const messageIndex = messages.value.findIndex(m => m.request_id === requestId);
+
+  // 当消息索引有效且未达到文本长度时继续打印
+  if (messageIndex !== -1 && index < text.length) {
+    messages.value[messageIndex].content += text.charAt(index);
+    typeWriterIndexes.value[requestId] = index + 1;
+    console.log(index)
+    setTimeout(() => {
+      typeWriterEffectSystem(text, requestId, speed);
+    }, speed);
+  }
+};
+
 
 const checkAndUpdateTasks = (finalText) => {
   // 检查文本是否包含特定的任务
@@ -431,6 +516,7 @@ html, body {
 
 
 
+
 /* 确保聊天容器填充整个屏幕，并且是最顶层的 */
 #chat-container {
   flex: 1; /* 拉伸以填充剩余空间 */
@@ -516,7 +602,7 @@ input[type="text"]:focus {
   margin-bottom: 16px;
   border-radius: 8px;
   max-width: 100%;
-  margin-right: 32px;
+  //margin-right: 32px;
   word-wrap: break-word;
   white-space: pre-wrap;
 }
@@ -525,7 +611,11 @@ input[type="text"]:focus {
   align-self: flex-start;
   background-color: transparent;
 }
-
+.system-message {
+  background-color: #3b3b3b; /* 系统消息的背景颜色 */
+  color: #f0f0f0; /* 文字颜色 */
+  /* 其他样式 */
+}
 .ai-message {
   align-self: flex-start;
   background-color: #3b3b3b;
