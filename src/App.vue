@@ -126,7 +126,9 @@ const action = ref("站立");
 
 
 const stories = ref([
-  { id: 1, header: '遇到博物馆保安咕噜和呱呱', content: '（地点：博物馆前门）\n' +
+  { id: 1, header: '遇到博物馆保安咕噜和呱呱', content: '关键地点：博物馆\n' +
+        '关键人物：咕噜、呱呱\n' +
+        '故事概要：咕噜和呱呱是博物馆的保安，他们的职责是维持博物馆的秩序，但由于天生的生理构造咕噜的眼睛只能往两边看，所以经常用余光瞥人，而呱呱的眼睛只能往头顶看，他努力往前看的时候总给人一种蔑视感；所以大家都觉得他们目中无人，很难相处。当然他们彼此之间由于无法对视，也并不认同对方。久而久之他们开始接受自己的人设，不再刻意解释。{user}和{char}不知道写个什么故事，想来到博物馆找一些灵感，遇到了博物馆盗窃案和咕噜和呱呱的重重阻挠，{char}决定写一个推理故事，自己成为大侦探，破案的同时解开了他俩的心结，发现他俩和好比抓到犯人更有意义，觉得自己不想继续当一个合格的侦探，开始想别的故事。（地点：博物馆前门）\n' +
         '“你好，鱼鱼先生~请问我们可以进去吗？~”{char}可爱又有礼貌的询问了一下。\n' +
         '“我叫咕噜，请。”咕噜面朝前方，但仿佛并没有看到{char}。\n' +
         '“等等！很抱歉您不能进去。”咕噜突然往后一步拦住了{char}，“您的着装不规范。”\n' +
@@ -452,6 +454,8 @@ const fetchSituationData = async () => {
     console.log(data.situation)
     // 更新组件的数据属性
     situationData.value = data.situation;
+
+    // typeWriterEffectSystem(processedContent, requestId, 10); // 启动打字机效果
     // 例如，保存到数据属性中：
     // this.situation = situationData;
   } catch (error) {
@@ -679,14 +683,10 @@ input[type="text"]:focus {
   white-space: pre-wrap;
 }
 
-.user-message {
-  align-self: flex-start;
-  background-color: transparent;
-}
+
 .system-message {
-  background-color: #3b3b3b; /* 系统消息的背景颜色 */
-  color: #f0f0f0; /* 文字颜色 */
-  /* 其他样式 */
+  background-image: linear-gradient(to right, rgba(59, 59, 59, 1), rgba(255, 205, 0, 0.6));
+  color: #f0f0f0;
 }
 .ai-message {
   align-self: flex-start;
