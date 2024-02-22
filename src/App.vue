@@ -227,16 +227,39 @@ const updateStoryStateAndSendMessage = (storyId) => {
     // 处理故事内容中的占位符
     const processedContent = replacePlaceholders(stories.value[storyIndex].content);
     const requestId = Date.now().toString(); // 生成唯一请求ID
-    // 发送处理后的故事内容到聊天框作为系统消息
-    // messages.value.push({
-    //   sender: 'System',
-    //   content: [],
-    //   request_id: requestId  // 使用当前时间戳作为唯一标识
-    // });
+
+    updateMessage(sessionId, 'system', processedContent);
     messages.value.push({ sender: 'System', content: '', request_id: requestId }); // 添加一个空消息
     typeWriterEffectSystem(processedContent, requestId, 10); // 启动打字机效果
   }
 };
+
+const updateMessage = async (sessionId, role, messageContent) => {
+  try {
+    const response = await fetch(`${remoteUrl.value}/update-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sessionId: sessionId.value,
+        role: role,
+        message: messageContent
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log('Message updated successfully');
+    } else {
+      console.log('Failed to update message');
+    }
+  } catch (error) {
+    console.error('Error updating message:', error);
+  }
+};
+
 const validateSession = async () => {
   try {
     const response = await fetch(remoteUrl.value + '/validate-session', {
