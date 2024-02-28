@@ -76,15 +76,21 @@
 
           <a-row type="flex" justify="center" class="row-item">
             <a-col :span="24">
-              <a-button type="primary" style="color:#161717" @click="showModal">日记</a-button>
+              <a-button type="primary" style="color:#161717" @click="showModal">日记本</a-button>
 
             </a-col>
           </a-row>
         </div>
         <a-modal v-model:open="open" title="日记本" @ok="handleOk" :footer="null" justify="center" >
+          <a-divider />
+          <a-space direction="horizontal" >
+            <span >角色在每晚休息前写日记，为方便测试，可点击按钮生成日记</span>
+            <a-button type="primary" @click="generateDiary" :loading="generateDiaryButton">生成日记</a-button>
+          </a-space>
+          <a-divider />
           <!-- 判断是否有数据 -->
           <template v-if="diaryEntries.length > 0">
-            <a-timeline>
+            <a-timeline >
               <a-timeline-item v-for="entry in diaryEntries" :key="entry.id" @click="entry.expanded = !entry.expanded"  :color="entry.expanded ? '#ff4400' : '#ffcd00'">
 <!--                &lt;!&ndash; 显示标题，点击切换展开/收起 &ndash;&gt;-->
 <!--                <p>{{ entry.content.title }}</p>-->
@@ -106,12 +112,13 @@
           <!-- 如果没有数据，显示空状态 -->
           <template v-else>
             <a-empty>
-              <a-button type="primary" @click="generateDiary">生成日记</a-button>
-              <contextHolder />
+<!--              <span >角色在每晚休息前写日记，为方便测试，可点击按钮生成日记</span>-->
+<!--              <a-button type="primary" @click="generateDiary" :loading="generateDiaryButton">生成日记</a-button>-->
+
             </a-empty>
           </template>
         </a-modal>
-
+        <contextHolder />
       </div>
 
       <!-- 聊天容器 -->
@@ -167,16 +174,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { DownOutlined, RightOutlined,CaretRightOutlined  } from '@ant-design/icons-vue';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale'; // 导入中文语言包
-import { notification } from 'ant-design-vue';
+// import { notification } from 'ant-design-vue';
 import axios from "axios";
-const [api, contextHolder] = notification.useNotification();
+// const [api, contextHolder] = notification.useNotification();
+import { message  } from 'ant-design-vue';
+const [messageApi, contextHolder] = message.useMessage();
 
-const openNotification = (description) => {
-  api.info({
-    message: `Notification`,
-    description:description,
-    placement: 'topLeft',
-  });
+const openInfo = (description) => {
+  messageApi.info(description);
 };
 // 使用ref创建响应式引用
 // const remoteUrl = ref("http://127.0.0.1:8000");
@@ -200,7 +205,7 @@ const sendMessagesLoading = ref(false);/*发送按钮的加载状态*/
 const sendButtonStr = ref("发送");/*发送按钮的文字*/
 const open = ref(false);
 const diaryEntries = ref([]); // 储存日记条目的数组
-
+const generateDiaryButton = ref(false);
 const fetchAllDiary=async()=>{
   try {
     const response = await fetch(`${remoteUrl.value}/fetch-all-diaries`, {
@@ -226,6 +231,7 @@ const fetchAllDiary=async()=>{
 // 格式化日期
 const formattedDate = (date) => format(new Date(date), 'PPPp', { locale: zhCN });
 const generateDiary = async () => {
+  generateDiaryButton.value = true;
   try {
     const response = await fetch(`${remoteUrl.value}/generate-diary`, {
       method: 'POST',
@@ -237,14 +243,16 @@ const generateDiary = async () => {
 
     const data = await response.json();
     if (response.ok) {
-      openNotification('日记已生成')
+      openInfo('日记已生成,请重新翻阅日记本')
       console.log('Generated diary entries:', diaryEntries.value);
+
     } else {
       console.log('Failed to generate diary entries');
     }
   } catch (error) {
     console.error('Error generating diary entries:', error);
   }
+  generateDiaryButton.value = false;
 };
 const showModal = () => {
   open.value = true;
