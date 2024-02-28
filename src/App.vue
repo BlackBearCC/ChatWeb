@@ -77,11 +77,50 @@
           <a-row type="flex" justify="center" class="row-item">
             <a-col :span="24">
               <a-button type="primary" style="color:#161717" @click="showModal">日记</a-button>
-              <a-modal v-model:open="open" title="Basic Modal" @ok="handleOk">
-              </a-modal>
+
             </a-col>
           </a-row>
         </div>
+        <a-modal v-model:open="open" title="日记本" @ok="handleOk" :footer="null" justify="center" >
+          <!-- 判断是否有数据 -->
+          <template v-if="diaryEntries.length > 0">
+<!--            <div class="diary-entries">-->
+<!--              &lt;!&ndash; 遍历并显示所有日记条目 &ndash;&gt;-->
+<!--              <div v-for="(entry, index) in diaryEntries" :key="index">-->
+<!--                <h3>{{ entry.content.title }}</h3>-->
+<!--                <p>{{ entry.content.content }}</p>-->
+<!--                <p>创建于: {{ entry.created_at }}</p>-->
+<!--              </div>-->
+<!--            </div>-->
+            <a-timeline>
+              <a-timeline-item v-for="entry in diaryEntries" :key="entry.id" @click="entry.expanded = !entry.expanded"  :color="entry.expanded ? 'green' : '#ffcd00'">
+<!--                &lt;!&ndash; 显示标题，点击切换展开/收起 &ndash;&gt;-->
+<!--                <p>{{ entry.content.title }}</p>-->
+<!--                <p>{{ formattedDate(entry.created_at)}}  </p>-->
+                <a-collapse
+                    :bordered="false"
+                    style="background: rgb(255, 255, 255)"
+                >
+                  <template #expandIcon="{ isActive }">
+                    <caret-right-outlined :rotate="isActive ? 90 : 0" />
+                  </template>
+                  <a-collapse-panel  :header="formattedDate(entry.created_at)" :style="customStyle">
+                    <p>{{ entry.content.content }}</p>
+                  </a-collapse-panel>
+                </a-collapse>
+                <!-- 当展开时显示完整内容 -->
+<!--                <div v-if="entry.expanded">{{ entry.content.content }}</div>-->
+              </a-timeline-item>
+            </a-timeline>
+          </template>
+
+          <!-- 如果没有数据，显示空状态 -->
+          <template v-else>
+            <a-empty>
+              <a-button type="primary" @click="generateDiary">生成日记</a-button>
+            </a-empty>
+          </template>
+        </a-modal>
 
       </div>
 
@@ -134,7 +173,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { DownOutlined } from '@ant-design/icons-vue';
+
+import { DownOutlined, RightOutlined,CaretRightOutlined  } from '@ant-design/icons-vue';
+import { format } from 'date-fns';
+import { zhCN } from 'date-fns/locale'; // 导入中文语言包
 import axios from "axios";
 
 // 使用ref创建响应式引用
@@ -158,11 +200,38 @@ const switchCOT = ref(false);
 const sendMessagesLoading = ref(false);/*发送按钮的加载状态*/
 const sendButtonStr = ref("发送");/*发送按钮的文字*/
 const open = ref(false);
+const diaryEntries = ref([]); // 储存日记条目的数组
+
+const fetchAllDiary=async()=>{
+  try {
+    const response = await fetch(`${remoteUrl.value}/fetch-all-diaries`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sessionId: sessionId.value })
+    });
+
+    const data = await response.json();
+    // console.log(data);
+    if (response.ok) {
+      diaryEntries.value = data.diaries;
+      console.log('Fetched diary entries:', diaryEntries.value);
+    } else {
+      console.log('Failed to fetch diary entries');
+    }
+  } catch (error) {
+    console.error('Error fetching diary entries:', error);
+  }
+};
+// 格式化日期
+const formattedDate = (date) => format(new Date(date), 'PPPp', { locale: zhCN });
 const generateDiary = () => {
 
 };
 const showModal = () => {
   open.value = true;
+  fetchAllDiary();
 };
 const handleOk = () => {
   open.value = false;
