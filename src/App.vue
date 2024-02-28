@@ -57,7 +57,7 @@
             </a-col>
           </a-row>
 
-          <a-row type="flex" justify="center" class="row-item">
+          <a-row type="flex" justify="center" class="row-item" >
             <a-col :span="24">
               <a-switch class="switchCOT" v-model:checked="switchCOT" checked-children="显示思维链" un-checked-children="隐藏思维链"></a-switch>
             </a-col>
@@ -94,21 +94,16 @@
         </div>
         <!-- 输入容器 -->
         <div id="input-container">
-          <input type="text" v-model="userInput" placeholder="在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
-          <button @click="sendMessage"><span>发送</span></button>
-          <!-- 触发下拉菜单的按钮 -->
-          <button @click="toggleDropdown">
-            <span>交互操作</span>
-          </button>
+          <a-input type="text"  v-model="userInput" placeholder="在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
+          <a-space direction="horizontal">
+            <a-button @click="sendMessage"><span>发送</span></a-button>
+            <!-- 触发下拉菜单的按钮 -->
+            <a-button @click="toggleDropdown">
+              <span>功能</span>
+            </a-button>
+          </a-space>
 
-          <!-- 下拉菜单 -->
-          <div v-show="showDropdown" class="dropdown-menu">
-            <ul>
-              <li @click="selectOption('摸摸头')">摸摸头</li>
-              <li @click="selectOption('摸摸脸')">摸摸脸</li>
-              <!-- 添加更多选项 -->
-            </ul>
-          </div>
+
         </div>
       </div>
 
@@ -653,9 +648,9 @@ html, body {
   border-radius: 20px; /* 圆角效果 */
 }
 
-.vertical-layout .row-item:not(:last-child) {
-  //margin-top: 24px;
-  padding-top: 24px; /* 设置垂直间距为24px */
+.vertical-layout .row-item {
+  margin-top: 24px;
+  //padding-top: 24px; /* 设置垂直间距为24px */
 }
 
 
@@ -784,49 +779,21 @@ input[type="text"]:focus {
 /* 输入框和按钮的容器样式 */
 #input-container {
   display: flex;
-  justify-content: space-between; /* 使输入框和按钮分布在两侧 */
-  align-items: center; /* 垂直居中对齐 */
-  height: 80px;
+  //justify-content: space-between; /* 使输入框和按钮分布在两侧 */
+  //align-items: center; /* 垂直居中对齐 */
+  //height: 80px;
   position: relative; /* 设置相对定位用于下拉菜单的绝对定位 */
 }
-/* 下拉菜单样式 */
-.dropdown-menu {
-  position: absolute; /* 绝对定位 */
-  background-color: #3b3b3b; /* 白色背景 */
-  border: 1px solid #ddd; /* 边框 */
-  border-radius: 4px; /* 圆角 */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* 阴影 */
-  width: 10%; /* 宽度与输入框匹配 */
-  z-index: 1000; /* 确保在最顶部 */
-}
 
-.dropdown-menu ul {
-  list-style: none; /* 移除列表样式 */
-  margin: 0;
-  padding: 0;
-}
 
-.dropdown-menu ul li {
-  padding: 10px; /* 内边距 */
-  border-bottom: 1px solid #ddd; /* 下边框 */
-  cursor: pointer; /* 手形光标 */
-}
-
-.dropdown-menu ul li:last-child {
-  border-bottom: none; /* 移除最后一项的下边框 */
-}
-
-.dropdown-menu ul li:hover {
-  background-color: #f6f6f6; /* 悬停背景颜色 */
-}
 
 /* 输入框样式 */
 input[type="text"] {
-  flex-grow: 4; /* 输入框占据剩余空间 */
+  flex-grow: 3; /* 输入框占据剩余空间 */
   margin-right: 10px; /* 与按钮之间的距离 */
-  height: 50px; /* 输入框高度，您可以根据需要调整 */
-  padding: 10px; /* 增加内边距以便文本居中 */
-  border-radius: 10px;
+  height: 36px; /* 输入框高度，您可以根据需要调整 */
+  //padding: 10px; /* 增加内边距以便文本居中 */
+  border-radius: 16px;
   border: 2px solid transparent; /* 设置透明边框以保持布局稳定 */
   background-color: whitesmoke; /* 暗色背景 */
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background-image 0.3s ease;
@@ -850,46 +817,12 @@ input[type="text"]::placeholder {
 }
 
 /* 按钮样式 */
-button {
-  background-image: linear-gradient(to left, #ffcd00, #ffcd00); /* 初始渐变背景 */
-  flex-grow: 1; /* 输入框占据剩余空间 */ height: 50px; /* 按钮高度与输入框一致 */
-  min-width: 150px;
-  //padding: 10px; /* 增加内边距以便文本居中 */
-  color: black;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-  position: relative; /* 为了伪元素定位 */
-  overflow: hidden; /* 确保伪元素不超出按钮边界 */
-  margin-right: 10px;
-}
 
-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%; /* 开始时将伪元素置于左侧之外 */
-  width: 300%; /* 使伪元素宽度为按钮的三倍 */
-  height: 100%;
-  //background-image: transparent; /* 初始时渐变背景为透明 */
-  transition: all 0.5s ease-out;
-  z-index: -1;
-}
 
-button:hover::before {
-  left: 0; /* 鼠标悬停时，移动伪元素以显示渐变效果 */
-  background-image: linear-gradient(to left, #fc8f35, #ffcd00); /* 鼠标悬停时的渐变背景 */
 
-}
+
 
 /* 按钮文本样式，确保在动画之上 */
-button span {
-  position: relative;
-  z-index: 10;
-}
 
 /* 反馈区域样式 */
 #feedback-section {
