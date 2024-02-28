@@ -1,4 +1,15 @@
 <template>
+  <a-config-provider
+      :theme="{
+      token: {
+        colorPrimary: '#ffcd00',
+        colorText: '#000000',
+
+      },
+
+    }"
+  >
+
   <div id="page-container">
 
     <!-- 顶部标题栏 -->
@@ -65,7 +76,7 @@
 
           <a-row type="flex" justify="center" class="row-item">
             <a-col :span="24">
-              <a-button type="primary" @click="showModal">日记</a-button>
+              <a-button type="primary" style="color:#161717" @click="showModal">日记</a-button>
               <a-modal v-model:open="open" title="Basic Modal" @ok="handleOk">
               </a-modal>
             </a-col>
@@ -94,11 +105,13 @@
         </div>
         <!-- 输入容器 -->
         <div id="input-container">
-          <a-input type="text"  v-model="userInput" placeholder="在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
+          <input type="text" v-model="userInput" placeholder="在此处输入文本开始体验哦..." @keypress.enter="sendMessage" />
           <a-space direction="horizontal">
-            <a-button @click="sendMessage"><span>发送</span></a-button>
+            <a-button type="primary" style="color:#161717" :loading="sendMessagesLoading" @click="sendMessage">
+              {{ sendButtonStr }}
+            </a-button>
             <!-- 触发下拉菜单的按钮 -->
-            <a-button @click="toggleDropdown">
+            <a-button type="primary" style="color:#161717" @click="toggleDropdown">
               <span>功能</span>
             </a-button>
           </a-space>
@@ -115,6 +128,7 @@
     </div>
 
   </div>
+  </a-config-provider>
 </template>
 
 <script setup>
@@ -141,7 +155,8 @@ const mood = ref("开心");
 const characterLocation = ref("客厅");
 const action = ref("站立");
 const switchCOT = ref(false);
-const iconLoading = ref(false);
+const sendMessagesLoading = ref(false);/*发送按钮的加载状态*/
+const sendButtonStr = ref("发送");/*发送按钮的文字*/
 const open = ref(false);
 const generateDiary = () => {
 
@@ -433,9 +448,13 @@ const sendMessage = async () => {
       content: userInput.value,
       request_id: Date.now().toString() // 生成一个临时的request_id
     });
+    sendMessagesLoading.value = false;
+    sendButtonStr.value = '发送';
     // 使用 fetch 发送请求
 
     try {
+      sendMessagesLoading.value = true;
+      sendButtonStr.value = '发送中...';
       const response = await fetch(remoteUrl.value+'/generate', {
         method: 'POST',
         headers: {
@@ -452,6 +471,7 @@ const sendMessage = async () => {
       userInput.value = '';
       // 处理流式响应
       const reader = response.body.getReader();
+      sendButtonStr.value = '回复中...';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -484,7 +504,11 @@ const sendMessage = async () => {
       }
     } catch (error) {
       console.error(error);
+      sendMessagesLoading.value = false;
+      sendButtonStr.value = '发送';
     }
+    sendMessagesLoading.value = false;
+    sendButtonStr.value = '发送';
 
   }
 };
@@ -780,7 +804,7 @@ input[type="text"]:focus {
 #input-container {
   display: flex;
   //justify-content: space-between; /* 使输入框和按钮分布在两侧 */
-  //align-items: center; /* 垂直居中对齐 */
+  align-items: center; /* 垂直居中对齐 */
   //height: 80px;
   position: relative; /* 设置相对定位用于下拉菜单的绝对定位 */
 }
@@ -789,11 +813,11 @@ input[type="text"]:focus {
 
 /* 输入框样式 */
 input[type="text"] {
-  flex-grow: 3; /* 输入框占据剩余空间 */
+  flex-grow: 4; /* 输入框占据剩余空间 */
   margin-right: 10px; /* 与按钮之间的距离 */
   height: 36px; /* 输入框高度，您可以根据需要调整 */
   //padding: 10px; /* 增加内边距以便文本居中 */
-  border-radius: 16px;
+  border-radius: 20px;
   border: 2px solid transparent; /* 设置透明边框以保持布局稳定 */
   background-color: whitesmoke; /* 暗色背景 */
   transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background-image 0.3s ease;
