@@ -84,27 +84,16 @@
         <a-modal v-model:open="open" title="日记本" @ok="handleOk" :footer="null" justify="center" >
           <!-- 判断是否有数据 -->
           <template v-if="diaryEntries.length > 0">
-<!--            <div class="diary-entries">-->
-<!--              &lt;!&ndash; 遍历并显示所有日记条目 &ndash;&gt;-->
-<!--              <div v-for="(entry, index) in diaryEntries" :key="index">-->
-<!--                <h3>{{ entry.content.title }}</h3>-->
-<!--                <p>{{ entry.content.content }}</p>-->
-<!--                <p>创建于: {{ entry.created_at }}</p>-->
-<!--              </div>-->
-<!--            </div>-->
             <a-timeline>
-              <a-timeline-item v-for="entry in diaryEntries" :key="entry.id" @click="entry.expanded = !entry.expanded"  :color="entry.expanded ? 'green' : '#ffcd00'">
+              <a-timeline-item v-for="entry in diaryEntries" :key="entry.id" @click="entry.expanded = !entry.expanded"  :color="entry.expanded ? '#ff4400' : '#ffcd00'">
 <!--                &lt;!&ndash; 显示标题，点击切换展开/收起 &ndash;&gt;-->
 <!--                <p>{{ entry.content.title }}</p>-->
 <!--                <p>{{ formattedDate(entry.created_at)}}  </p>-->
                 <a-collapse
                     :bordered="false"
-                    style="background: rgb(255, 255, 255)"
+                    style="background: rgba(255,205,0,0.2)"
                 >
-                  <template #expandIcon="{ isActive }">
-                    <caret-right-outlined :rotate="isActive ? 90 : 0" />
-                  </template>
-                  <a-collapse-panel  :header="formattedDate(entry.created_at)" :style="customStyle">
+                  <a-collapse-panel  :header="formattedDate(entry.created_at)" :style="customStyle" :show-arrow="false">
                     <p>{{ entry.content.content }}</p>
                   </a-collapse-panel>
                 </a-collapse>
@@ -118,6 +107,7 @@
           <template v-else>
             <a-empty>
               <a-button type="primary" @click="generateDiary">生成日记</a-button>
+              <contextHolder />
             </a-empty>
           </template>
         </a-modal>
@@ -177,8 +167,17 @@ import { v4 as uuidv4 } from 'uuid';
 import { DownOutlined, RightOutlined,CaretRightOutlined  } from '@ant-design/icons-vue';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale'; // 导入中文语言包
+import { notification } from 'ant-design-vue';
 import axios from "axios";
+const [api, contextHolder] = notification.useNotification();
 
+const openNotification = (description) => {
+  api.info({
+    message: `Notification`,
+    description:description,
+    placement: 'topLeft',
+  });
+};
 // 使用ref创建响应式引用
 // const remoteUrl = ref("http://127.0.0.1:8000");
 const remoteUrl = ref("http://182.254.242.30:8888");
@@ -226,8 +225,26 @@ const fetchAllDiary=async()=>{
 };
 // 格式化日期
 const formattedDate = (date) => format(new Date(date), 'PPPp', { locale: zhCN });
-const generateDiary = () => {
+const generateDiary = async () => {
+  try {
+    const response = await fetch(`${remoteUrl.value}/generate-diary`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sessionId: sessionId.value })
+    });
 
+    const data = await response.json();
+    if (response.ok) {
+      openNotification('日记已生成')
+      console.log('Generated diary entries:', diaryEntries.value);
+    } else {
+      console.log('Failed to generate diary entries');
+    }
+  } catch (error) {
+    console.error('Error generating diary entries:', error);
+  }
 };
 const showModal = () => {
   open.value = true;
