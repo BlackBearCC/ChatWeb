@@ -36,20 +36,41 @@
           <div class="status-tag">位置：{{ characterLocation || 'null' }}</div>
           <div class="status-tag">动作：{{ action || 'null' }}</div>
         </div>
-        <a-dropdown>
-          <a class="ant-dropdown-link" @click.prevent>
-            添加剧情 <DownOutlined />
-          </a>
-          <template #overlay>
-            <a-menu>
-              <a-menu-item v-for="story in stories" :key="story.id"
-                           :disabled="!story.enabled"
-                           @click="updateStoryStateAndSendMessage(story.id)">
-                {{ story.header }}
-              </a-menu-item>
-            </a-menu>
-          </template>
-        </a-dropdown>
+        <div class="vertical-layout">
+          <a-row type="flex" justify="center" class="row-item">
+            <a-col :span="24">
+              <a-dropdown>
+                <a-button>
+                  添加剧情
+                  <DownOutlined />
+                </a-button>
+                <template #overlay>
+                  <a-menu>
+                    <a-menu-item v-for="story in stories" :key="story.id"
+                                 :disabled="!story.enabled"
+                                 @click="updateStoryStateAndSendMessage(story.id)">
+                      {{ story.header }}
+                    </a-menu-item>
+                  </a-menu>
+                </template>
+              </a-dropdown>
+            </a-col>
+          </a-row>
+
+          <a-row type="flex" justify="center" class="row-item">
+            <a-col :span="24">
+              <a-switch class="switchCOT" v-model:checked="switchCOT" checked-children="显示思维链" un-checked-children="隐藏思维链"></a-switch>
+            </a-col>
+          </a-row>
+
+          <a-row type="flex" justify="center" class="row-item">
+            <a-col :span="24">
+              <a-button type="primary" @click="showModal">日记</a-button>
+              <a-modal v-model:open="open" title="Basic Modal" @ok="handleOk">
+              </a-modal>
+            </a-col>
+          </a-row>
+        </div>
 
       </div>
 
@@ -108,7 +129,8 @@ import { DownOutlined } from '@ant-design/icons-vue';
 import axios from "axios";
 
 // 使用ref创建响应式引用
-const remoteUrl = ref("http://127.0.0.1:8000");
+// const remoteUrl = ref("http://127.0.0.1:8000");
+const remoteUrl = ref("http://182.254.242.30:8888");
 const userInput = ref('');
 const feedbackInput = ref('');
 const messages = ref([]);
@@ -123,6 +145,18 @@ const energy = ref(68);
 const mood = ref("开心");
 const characterLocation = ref("客厅");
 const action = ref("站立");
+const switchCOT = ref(false);
+const iconLoading = ref(false);
+const open = ref(false);
+const generateDiary = () => {
+
+};
+const showModal = () => {
+  open.value = true;
+};
+const handleOk = () => {
+  open.value = false;
+};
 
 const stories = ref([
   {id: 1 ,header :"新手教程",content:'"看来我们要在新的时空开始冒险了！！"{user}一扭头就撞上了{char}充满期待的大眼神，"我该怎么称呼你呢？"\n' +
@@ -415,7 +449,8 @@ const sendMessage = async () => {
         },
         body: JSON.stringify({
           data: userInput.value, // 用户输入的数据
-          sessionId: sessionId.value // 携带sessionId
+          sessionId: sessionId.value, // 携带sessionId
+          fullCOT: switchCOT.value // 携带COT开关状态
         })
       });
       // 清空输入框
@@ -618,7 +653,10 @@ html, body {
   border-radius: 20px; /* 圆角效果 */
 }
 
-
+.vertical-layout .row-item:not(:last-child) {
+  //margin-top: 24px;
+  padding-top: 24px; /* 设置垂直间距为24px */
+}
 
 
 
